@@ -13,7 +13,17 @@ impl FileWalker {
     pub fn new(config: &Config) -> Self {
         let mut builder = WalkBuilder::new(&config.root);
         builder.hidden(!config.all);
-        builder.git_ignore(!config.all);
+
+        if !config.all {
+            let gitignore_path = config.root.join(".gitignore");
+            if gitignore_path.exists() {
+                let _ = builder.add_ignore(&gitignore_path);
+            }
+            builder.git_ignore(true);
+        } else {
+            builder.git_ignore(false);
+        }
+
         builder.follow_links(true);
 
         Self {

@@ -1,10 +1,6 @@
-mod config;
-mod error;
-mod fs;
-
-use crate::config::Config;
-use crate::error::AppError;
-use crate::fs::walker::FileWalker;
+use rff::config::Config;
+use rff::error::AppError;
+use rff::fs::walker::FileWalker;
 
 fn main() -> Result<(), AppError> {
     let config = Config::try_parse()?;
