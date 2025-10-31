@@ -15,8 +15,10 @@ pub struct Config {
     #[arg(long, value_parser = parse_height)]
     pub height: Option<u16>,
 
+    #[arg(default_value = ".")]
     pub root: PathBuf,
 
+    #[arg(default_value = "nano")]
     pub editor: String,
 }
 
