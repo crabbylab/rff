@@ -1,4 +1,3 @@
-// src/search/matcher.rs
 use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
 use std::cmp::Reverse;
 
@@ -16,11 +15,7 @@ impl Matcher {
         self.inner.fuzzy_match(candidate, pattern)
     }
 
-    pub fn rank<'a>(
-        &self,
-        pattern: &str,
-        candidates: &'a [String],
-    ) -> Vec<&'a String> {
+    pub fn rank<'a>(&self, pattern: &str, candidates: &'a [String]) -> Vec<&'a String> {
         let mut scored: Vec<_> = candidates
             .iter()
             .filter_map(|c| self.score(pattern, c).map(|s| (c, s)))

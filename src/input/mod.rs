@@ -1,10 +1,10 @@
-use crossterm::event::{self, Event, KeyCode, KeyEventKind};
-use std::io::Result;
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+use std::io;
 use std::time::Duration;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum InputEvent {
-    Char(char),
+    Key(KeyEvent),
     Backspace,
     Enter,
     Esc,
@@ -18,21 +18,16 @@ impl InputReader {
         Self
     }
 
-    pub fn read(&self) -> Result<Option<InputEvent>> {
+    pub fn read(&self) -> io::Result<Option<InputEvent>> {
         if event::poll(Duration::from_millis(50))? {
-            if let Event::Key(key) = event::read()? {
-                if key.kind != KeyEventKind::Press {
-                    return Ok(None);
-                }
-                match key.code {
-                    KeyCode::Char(c) => Ok(Some(InputEvent::Char(c))),
-                    KeyCode::Backspace => Ok(Some(InputEvent::Backspace)),
+            match event::read()? {
+                Event::Key(key) if key.kind == KeyEventKind::Press => match key.code {
                     KeyCode::Enter => Ok(Some(InputEvent::Enter)),
                     KeyCode::Esc => Ok(Some(InputEvent::Esc)),
-                    _ => Ok(None),
-                }
-            } else {
-                Ok(None)
+                    KeyCode::Backspace => Ok(Some(InputEvent::Backspace)),
+                    _ => Ok(Some(InputEvent::Key(key))),
+                },
+                _ => Ok(None),
             }
         } else {
             Ok(Some(InputEvent::Tick))

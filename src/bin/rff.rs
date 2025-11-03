@@ -1,4 +1,5 @@
 use crossterm::{
+    event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
@@ -33,12 +34,12 @@ fn main() -> Result<(), AppError> {
     let mut stdout = stdout();
     execute!(stdout, EnterAlternateScreen)?;
 
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
+
     let mut query = String::new();
     let mut list_state = ListState::default();
     list_state.select(Some(0));
-
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
 
     loop {
         let ranked = matcher.rank(&query, &paths);
@@ -75,22 +76,33 @@ fn main() -> Result<(), AppError> {
 
         if let Some(event) = input.read()? {
             match event {
-                rff::input::InputEvent::Char(c) => {
-                    if c == 'j' || c == 'k' {
-                        let i = list_state.selected().unwrap_or(0);
-                        let len = ranked.len();
-                        if len == 0 {
-                            continue;
-                        }
-                        let new = if c == 'j' {
-                            (i + 1).min(len - 1)
-                        } else {
-                            i.saturating_sub(1)
-                        };
-                        list_state.select(Some(new));
-                    } else {
-                        query.push(c);
+                rff::input::InputEvent::Key(KeyEvent {
+                    code: KeyCode::Char('j'),
+                    modifiers: KeyModifiers::CONTROL,
+                    kind: KeyEventKind::Press,
+                    ..
+                }) => {
+                    let i = list_state.selected().unwrap_or(0);
+                    let len = ranked.len();
+                    if len > 0 {
+                        list_state.select(Some((i + 1).min(len - 1)));
                     }
+                }
+                rff::input::InputEvent::Key(KeyEvent {
+                    code: KeyCode::Char('k'),
+                    modifiers: KeyModifiers::CONTROL,
+                    kind: KeyEventKind::Press,
+                    ..
+                }) => {
+                    let i = list_state.selected().unwrap_or(0);
+                    list_state.select(Some(i.saturating_sub(1)));
+                }
+                rff::input::InputEvent::Key(KeyEvent {
+                    code: KeyCode::Char(c),
+                    kind: KeyEventKind::Press,
+                    ..
+                }) => {
+                    query.push(c);
                 }
                 rff::input::InputEvent::Backspace => {
                     query.pop();
@@ -112,8 +124,10 @@ fn main() -> Result<(), AppError> {
                     }
                     break;
                 }
+
                 rff::input::InputEvent::Esc => break,
                 rff::input::InputEvent::Tick => {}
+                _ => {}
             }
         }
     }
